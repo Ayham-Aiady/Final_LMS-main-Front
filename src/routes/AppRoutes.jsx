@@ -30,10 +30,18 @@ import GradeSubmissions from '../pages/Instructor/GradeSubmissions.jsx';
 import StudentAnalytics from '../pages/Instructor/StudentAnalytics.jsx';
 import InstructorLayout from '../main-layouts/InstructorLayout.jsx';
 
+import StudentLayout from '../main-layouts/StudentLayout.jsx';
+import ExploreCourses from '../pages/student/ExploreCourses.jsx';
+import CourseDetails from '../pages/student/CourseDetails.jsx';
+import StudentCourses from '../pages/student/StudentCourses.jsx';
+
+
+
+
 
 
 const AppRoutes = () => {
-  const { loading } = useAuth();
+  const { loading, user } = useAuth();
 
   if (loading) return <Loader />;
 
@@ -51,14 +59,35 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      <Route
-        path="/dashboard/student"
-        element={
-          <PrivateRoute allowedRoles={['student']}>
-            <StudentDashboard />
-          </PrivateRoute>
-        }
-      />
+
+
+
+<Route
+  path="/student"
+  element={
+    <PrivateRoute allowedRoles={['student']}>
+      <StudentLayout />
+    </PrivateRoute>
+  }
+>
+  <Route index element={<StudentDashboard />} />
+  <Route path="dashboard" element={<StudentDashboard />} />
+  <Route path="explore" element={<ExploreCourses userId={user?.id} />} />
+  <Route path="courses" element={<StudentCourses />} />
+
+  <Route path="courses/:courseId" element={<CourseDetails userId={user?.id} />} />
+</Route>
+
+<Route
+  path="/dashboard/student"
+  element={<Navigate to="/student/dashboard" replace />}
+/>
+
+
+
+
+
+
      <Route
   path="/instructor"
   element={

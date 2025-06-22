@@ -1,6 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
-import { Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Box } from '@mui/material';
+import {
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Toolbar,
+  Box,
+  IconButton
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import CloseIcon from '@mui/icons-material/Close';
 import SchoolIcon from '@mui/icons-material/School';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -8,24 +19,43 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 const drawerWidth = 240;
 
 const navItems = [
-  { label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard/student' },
+  { label: 'Dashboard', icon: <DashboardIcon />, path: '/student/dashboard' },
   { label: 'My Courses', icon: <SchoolIcon />, path: '/student/courses' },
   { label: 'Assignments', icon: <AssignmentIcon />, path: '/student/assignments' }
 ];
 
 const StudentLayout = () => {
   const location = useLocation();
+  const [open, setOpen] = useState(true);
+
+  const toggleDrawer = () => setOpen(prev => !prev);
 
   return (
     <Box sx={{ display: 'flex' }}>
+      {/* Sidebar Drawer, offset below Navbar */}
       <Drawer
-        variant="permanent"
+        variant="persistent"
+        anchor="left"
+        open={open}
         sx={{
           width: drawerWidth,
-          [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' }
+          flexShrink: 0,
+          position: 'fixed',
+          top: '64px', // adjust to your Navbar height
+          height: 'calc(100% - 64px)',
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            top: '64px',
+            height: 'calc(100% - 64px)',
+            boxSizing: 'border-box'
+          }
         }}
       >
-        <Toolbar />
+        <Toolbar>
+          <IconButton onClick={toggleDrawer}>
+            {open ? <CloseIcon /> : <MenuIcon />}
+          </IconButton>
+        </Toolbar>
         <List>
           {navItems.map(item => (
             <ListItem
@@ -42,8 +72,33 @@ const StudentLayout = () => {
         </List>
       </Drawer>
 
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <Toolbar />
+      {/* Reopen button when sidebar is closed */}
+      {!open && (
+        <IconButton
+          onClick={toggleDrawer}
+          sx={{
+            position: 'fixed',
+            top: '72px',
+            left: '16px',
+            backgroundColor: '#fff',
+            border: '1px solid #ccc',
+            zIndex: 1201
+          }}
+        >
+          <MenuIcon />
+        </IconButton>
+      )}
+
+      {/* Main content */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          ml: open ? `${drawerWidth}px` : 0,
+          mt: '64px' // to match Navbar offset
+        }}
+      >
         <Outlet />
       </Box>
     </Box>

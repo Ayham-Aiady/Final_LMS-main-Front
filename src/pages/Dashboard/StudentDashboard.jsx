@@ -1,8 +1,4 @@
 
-
-
-
-
 import { Grid, Paper, Typography, Box } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import LibraryAddCheckIcon from '@mui/icons-material/LibraryAddCheck';
@@ -10,6 +6,8 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import QuizIcon from '@mui/icons-material/Quiz';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { useAuth } from '../../context/authContext.jsx';
+import { Link } from 'react-router-dom';
+
 
 const FeatureCard = ({ icon, title, description, color }) => (
   <Paper elevation={3} sx={{ p: 3, display: 'flex', alignItems: 'flex-start', minHeight: '140px' }}>
@@ -28,13 +26,16 @@ const StudentFeatures = () => {
       <Typography variant="h5" gutterBottom>🎒 What You Can Do</Typography>
       <Grid container spacing={3} columns={12}>
         <Grid item xs={12} sm={6} md={4}>
-          <FeatureCard
-            icon={<SearchIcon fontSize="inherit" />}
-            title="Browse Courses"
-            description="Discover a wide range of courses tailored to your interests and goals."
-            color="#3f51b5"
-          />
-        </Grid>
+  <Link to="/student/explore" style={{ textDecoration: 'none' }}>
+    <FeatureCard
+      icon={<SearchIcon fontSize="inherit" />}
+      title="Browse Courses"
+      description="Discover a wide range of courses tailored to your interests and goals."
+      color="#3f51b5"
+    />
+  </Link>
+</Grid>
+
         <Grid item xs={12} sm={6} md={4}>
           <FeatureCard
             icon={<LibraryAddCheckIcon fontSize="inherit" />}
