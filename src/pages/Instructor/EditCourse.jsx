@@ -128,11 +128,22 @@ const EditCourse = () => {
       });
 
       for (const mod of courseData.modules) {
-        await axios.put(`/api/modules/update/${mod.id}`, {
-          title: mod.title,
-          description: mod.description,
-          order: mod.order
-        });
+       if (!mod.id) {
+  const res = await axios.post('/api/modules/create', {
+    course_id: courseId,
+    title: mod.title,
+    description: mod.description,
+    order: mod.order
+  });
+  mod.id = res.data.id;
+} else {
+  await axios.put(`/api/modules/update/${mod.id}`, {
+    title: mod.title,
+    description: mod.description,
+    order: mod.order
+  });
+}
+
 
         for (const lesson of mod.lessons) {
           let content_url = lesson.content_url;
@@ -143,34 +154,73 @@ const EditCourse = () => {
             const uploadRes = await axios.post('/api/upload', lessonFormData);
             content_url = uploadRes.data.attachment.secure_url;
           }
+//           if (!lesson.id) {
+//   console.warn('⚠️ Skipping lesson update: missing lesson.id', lesson);
+//   continue;
+// }
 
-          await axios.put(`/api/lessons/update/${lesson.id}`, {
-            title: lesson.title,
-            content_type: lesson.content_type,
-            content_url,
-            duration: lesson.duration,
-            order: lesson.order
-          });
+
+          if (!lesson.id) {
+  const res = await axios.post(`/api/lessons/create`, {
+    title: lesson.title,
+    content_type: lesson.content_type,
+    content_url,
+    duration: lesson.duration,
+    order: lesson.order,
+    module_id: mod.id  // important: must link lesson to module
+  });
+  lesson.id = res.data.id; // store new ID so quizzes or updates can use it later
+} else {
+  await axios.put(`/api/lessons/update/${lesson.id}`, {
+    title: lesson.title,
+    content_type: lesson.content_type,
+    content_url,
+    duration: lesson.duration,
+    order: lesson.order
+  });
+}
+
 
           if (lesson.quiz) {
-            await axios.put(`/api/quizzes/update/${lesson.quiz.id}`, {
-              lesson_id: lesson.id,
-              max_score: lesson.quiz.max_score
-            });
+  // ✅ If the quiz doesn't exist yet, create it
+  if (!lesson.quiz.id) {
+    const quizRes = await axios.post('/api/quizzes/create', {
+      lesson_id: lesson.id,
+      max_score: lesson.quiz.max_score
+    });
+    lesson.quiz.id = quizRes.data.id;
+  } else {
+    // 🔁 Otherwise, update it
+    await axios.put(`/api/quizzes/update/${lesson.quiz.id}`, {
+      lesson_id: lesson.id,
+      max_score: lesson.quiz.max_score
+    });
+  }
 
-            for (const q of lesson.quiz.questions) {
-              if (!q.options.includes(q.correct_answer)) {
-                throw new Error(`Correct answer must be one of the options for: ${q.question_text}`);
-              }
+  // 🧠 Now handle each question
+  for (const q of lesson.quiz.questions) {
+    if (!q.options.includes(q.correct_answer)) {
+      throw new Error(`Correct answer must be one of the options for: ${q.question_text}`);
+    }
 
-              await axios.put(`/api/questions/update/${q.id}`, {
-                question_text: q.question_text,
-                options: q.options,
-                correct_answer: q.correct_answer,
-                quizz_id: lesson.quiz.id
-              });
-            }
-          }
+    if (!q.id) {
+      await axios.post('/api/questions/create', {
+        question_text: q.question_text,
+        options: q.options,
+        correct_answer: q.correct_answer,
+        quizz_id: lesson.quiz.id
+      });
+    } else {
+      await axios.put(`/api/questions/update/${q.id}`, {
+        question_text: q.question_text,
+        options: q.options,
+        correct_answer: q.correct_answer,
+        quizz_id: lesson.quiz.id
+      });
+    }
+  }
+}
+
         }
       }
 

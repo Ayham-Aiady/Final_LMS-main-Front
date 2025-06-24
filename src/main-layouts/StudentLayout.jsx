@@ -3,7 +3,7 @@ import { Outlet, useLocation, Link } from 'react-router-dom';
 import {
   Drawer,
   List,
-  ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   Toolbar,
@@ -41,7 +41,7 @@ const StudentLayout = () => {
           width: drawerWidth,
           flexShrink: 0,
           position: 'fixed',
-          top: '64px', // adjust to your Navbar height
+          top: '64px',
           height: 'calc(100% - 64px)',
           '& .MuiDrawer-paper': {
             width: drawerWidth,
@@ -58,8 +58,7 @@ const StudentLayout = () => {
         </Toolbar>
         <List>
           {navItems.map(item => (
-            <ListItem
-              button
+            <ListItemButton
               key={item.label}
               component={Link}
               to={item.path}
@@ -67,7 +66,7 @@ const StudentLayout = () => {
             >
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.label} />
-            </ListItem>
+            </ListItemButton>
           ))}
         </List>
       </Drawer>
@@ -96,7 +95,7 @@ const StudentLayout = () => {
           flexGrow: 1,
           p: 3,
           ml: open ? `${drawerWidth}px` : 0,
-          mt: '64px' // to match Navbar offset
+          mt: '64px'
         }}
       >
         <Outlet />

@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
-  Grid,
   Card,
   CardContent,
   CardMedia,
@@ -9,10 +8,9 @@ import {
   TextField,
   Button,
   CircularProgress,
-  Box,
+  Box
 } from '@mui/material';
 import { Link } from 'react-router-dom';
-
 
 const ExploreCourses = ({ userId }) => {
   const [courses, setCourses] = useState([]);
@@ -22,43 +20,43 @@ const ExploreCourses = ({ userId }) => {
   const [loading, setLoading] = useState(false);
   const limit = 8;
 
-  const loadCourses = useCallback(async () => {
-    if (!hasMore) return;
+  const loadCourses = async () => {
+    if (!hasMore || loading) return;
     setLoading(true);
     try {
       const res = await axios.get(`/api/courses/available/${userId}`, {
-        params: {
-          search,
-          limit,
-          offset: (page - 1) * limit,
-        },
+        params: { search, limit, offset: (page - 1) * limit }
       });
 
-      if (res.data.length === 0) {
-        setHasMore(false);
-      } else {
-        setCourses(prev => {
-  const existingIds = new Set(prev.map(c => c.id));
-  const newCourses = res.data.filter(c => !existingIds.has(c.id));
-  return [...prev, ...newCourses];
-});
+      const newCourses = res.data;
 
-        setPage(prev => prev + 1);
+      if (page === 1) {
+        setCourses(newCourses);
+      } else {
+        setCourses((prev) => [
+          ...prev,
+          ...newCourses.filter((c) => !prev.some((p) => p.id === c.id))
+        ]);
+      }
+
+      if (newCourses.length < limit) {
+        setHasMore(false);
       }
     } catch (err) {
       console.error('Error loading courses:', err);
     } finally {
       setLoading(false);
     }
-  }, [userId, search, page, hasMore]);
+  };
 
   useEffect(() => {
     loadCourses();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [page, search]);
 
-  const handleSearch = async (e) => {
-    setSearch(e.target.value);
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearch(value);
     setCourses([]);
     setPage(1);
     setHasMore(true);
@@ -67,8 +65,8 @@ const ExploreCourses = ({ userId }) => {
   const handleScroll = (e) => {
     const nearBottom =
       e.target.scrollHeight - e.target.scrollTop <= e.target.clientHeight + 50;
-    if (nearBottom && !loading) {
-      loadCourses();
+    if (nearBottom && !loading && hasMore) {
+      setPage((prev) => prev + 1);
     }
   };
 
@@ -90,56 +88,63 @@ const ExploreCourses = ({ userId }) => {
         sx={{ mb: 3 }}
       />
 
-      <Grid container spacing={3}>
-        {courses.map(course => {
-  const handleEnroll = async () => {
-    try {
-      const res = await axios.post('/api/enrollments/create', {
-        user_id: userId,
-        course_id: course.id
-      });
-      // Optional: Remove course from the list after enrolling
-      setCourses(prev => prev.filter(c => c.id !== course.id));
-    } catch (err) {
-      console.error('Enrollment failed:', err);
-    }
-  };
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 3,
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: '1fr 1fr',
+            md: '1fr 1fr 1fr',
+            lg: '1fr 1fr 1fr 1fr'
+          }
+        }}
+      >
+        {courses.map((course) => {
+          const handleEnroll = async () => {
+            try {
+              await axios.post('/api/enrollments/create', {
+                user_id: userId,
+                course_id: course.id
+              });
+              setCourses((prev) => prev.filter((c) => c.id !== course.id));
+            } catch (err) {
+              console.error('Enrollment failed:', err);
+            }
+          };
 
-  return (
-    <Grid xs={12} sm={6} md={4} lg={3} key={course.id}>
-     
-      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        {course.thumbnail_url && (
-          <CardMedia
-            component="img"
-            height="140"
-            image={course.thumbnail_url}
-            alt={course.title}
-          />
-        )}
-        <CardContent sx={{ flexGrow: 1 }}>
-          <Typography gutterBottom variant="h6">
-            {course.title}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" noWrap>
-            {course.description}
-          </Typography>
-        </CardContent>
-           <Box sx={{ p: 2 }}>
-            <Link to={`/student/courses/${course.id}`} style={{ textDecoration: 'none' }}>
-              <Button fullWidth variant="outlined" color="primary">
-                View Details
-              </Button>
-            </Link>
-          </Box>
-
-      </Card>
-     
-    </Grid>
-  );
-})
-}
-      </Grid>
+          return (
+            <Card
+              key={course.id}
+              sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+            >
+              {course.thumbnail_url && (
+                <CardMedia
+                  component="img"
+                  height="140"
+                  image={course.thumbnail_url}
+                  alt={course.title}
+                />
+              )}
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Typography gutterBottom variant="h6">
+                  {course.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" noWrap>
+                  {course.description}
+                </Typography>
+              </CardContent>
+              <Box sx={{ p: 2 }}>
+                <Link to={`/student/courses/${course.id}`} style={{ textDecoration: 'none' }}>
+                  <Button fullWidth variant="outlined" color="primary">
+                    View Details
+                  </Button>
+                </Link>
+              </Box>
+            </Card>
+          );
+        })}
+      </Box>
 
       {loading && (
         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
