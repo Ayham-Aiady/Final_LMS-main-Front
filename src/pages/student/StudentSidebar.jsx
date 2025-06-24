@@ -31,6 +31,9 @@ const StudentSidebar = ({ open, onToggle }) => {
           <ListItem button component="a" href="/student/courses">
             <ListItemText primary="My Courses" />
           </ListItem>
+          <ListItem button component="a" href="/student/assignments">
+            <ListItemText primary="Assignments" />
+          </ListItem>
           <ListItem button component="a" href="/student/profile">
             <ListItemText primary="Profile" />
           </ListItem>

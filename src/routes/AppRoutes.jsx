@@ -34,6 +34,16 @@ import StudentLayout from '../main-layouts/StudentLayout.jsx';
 import ExploreCourses from '../pages/student/ExploreCourses.jsx';
 import CourseDetails from '../pages/student/CourseDetails.jsx';
 import StudentCourses from '../pages/student/StudentCourses.jsx';
+import EnrolledCourses from '../pages/student/EnrolledCourses.jsx';
+import CourseView from '../pages/student/CourseView.jsx';
+import LessonView from '../pages/student/LessonView.jsx';
+import Assignments from '../pages/student/Assignments.jsx';
+import AssignmentPageWrapper from '../pages/student/AssignmentPageWrapper.jsx';
+
+
+
+
+
 
 
 
@@ -61,7 +71,6 @@ const AppRoutes = () => {
       />
 
 
-
 <Route
   path="/student"
   element={
@@ -73,17 +82,20 @@ const AppRoutes = () => {
   <Route index element={<StudentDashboard />} />
   <Route path="dashboard" element={<StudentDashboard />} />
   <Route path="explore" element={<ExploreCourses userId={user?.id} />} />
-  <Route path="courses" element={<StudentCourses />} />
-
+  <Route path="courses" element={<EnrolledCourses userId={user?.id} />} />
   <Route path="courses/:courseId" element={<CourseDetails userId={user?.id} />} />
+  <Route path="courses/:courseId/view" element={<CourseView />} />
+  <Route path="courses/:courseId/lessons/:lessonId" element={<LessonView userId={user?.id} />} />
+  <Route path="assignments" element={<Assignments />} />
+<Route path="assignments/:assignmentId/view" element={<AssignmentPageWrapper />} />
+
 </Route>
+
 
 <Route
   path="/dashboard/student"
   element={<Navigate to="/student/dashboard" replace />}
 />
-
-
 
 
 

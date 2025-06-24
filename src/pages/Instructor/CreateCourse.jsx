@@ -1,3 +1,4 @@
+
 // import React, { useState, useEffect } from 'react';
 // import axios from 'axios';
 // import { useAuth } from '../../context/authContext.jsx';
@@ -26,12 +27,15 @@
 //   const handleAddModule = () => {
 //     setCourse(prev => ({
 //       ...prev,
-//       modules: [...prev.modules, {
-//         title: '',
-//         description: '',
-//         order: prev.modules.length + 1,
-//         lessons: []
-//       }]
+//       modules: [
+//         ...prev.modules,
+//         {
+//           title: '',
+//           description: '',
+//           order: prev.modules.length + 1,
+//           lessons: []
+//         }
+//       ]
 //     }));
 //   };
 
@@ -42,7 +46,6 @@
 //       content_type: 'video',
 //       content_url: '',
 //       videoFile: null,
-//       assignmentFile: null,
 //       duration: 0,
 //       order: modules[moduleIndex].lessons.length + 1,
 //       quiz: null
@@ -66,7 +69,9 @@
 //     const modules = [...course.modules];
 //     modules[mIdx].lessons[lIdx].quiz = {
 //       max_score: 10,
-//       questions: [{ question_text: '', options: ['', '', '', ''], correct_answer: '' }]
+//       questions: [
+//         { question_text: '', options: ['', '', '', ''], correct_answer: '' }
+//       ]
 //     };
 //     setCourse({ ...course, modules });
 //   };
@@ -90,157 +95,180 @@
 //   };
 
 //   const handleSubmit = async () => {
-//     if (isSubmitting) return;
-//     setIsSubmitting(true);
+//   if (isSubmitting) return; // 🔒 Prevent duplicate submissions
+//   setIsSubmitting(true);     // 🕒 Show loading state
 
-//     try {
-//       let thumbnail_url = course.thumbnail_url;
-//       if (thumbnailFile) {
-//         const formData = new FormData();
-//         formData.append("file", thumbnailFile);
-//         const uploadRes = await axios.post("/api/upload", formData);
-//         thumbnail_url = uploadRes.data.attachment.secure_url;
-//       }
+//   try {
+//     // 🖼️ Step 1: Upload thumbnail (if selected)
+//     let thumbnail_url = course.thumbnail_url;
+//     if (thumbnailFile) {
+//       const formData = new FormData();
+//       formData.append("file", thumbnailFile);
+//       const uploadRes = await axios.post("/api/upload", formData);
+//       thumbnail_url = uploadRes.data.attachment.secure_url;
+//     }
 
-//       if (!course.title || !course.description || !course.category_id || !instructorId || !thumbnail_url) {
-//         alert("🚧 Please fill in all required fields.");
-//         return;
-//       }
+//     // ✅ Step 2: Validate required fields before submission
+//     if (
+//       !course.title.trim() ||
+//       !course.description.trim() ||
+//       !course.category_id ||
+//       isNaN(parseInt(course.category_id)) ||
+//       !instructorId ||
+//       isNaN(parseInt(instructorId)) ||
+//       !thumbnail_url
+//     ) {
+//       alert("🚧 Please fill in all required fields before submitting.");
+//       return;
+//     }
 
-//       const courseRes = await axios.post("/api/courses/create", {
-//         title: course.title,
-//         description: course.description,
-//         category_id: parseInt(course.category_id),
-//         instructor_id: parseInt(instructorId),
-//         thumbnail_url
+//     // 📘 Step 3: Create Course entry
+//     const courseRes = await axios.post("/api/courses/create", {
+//       title: course.title,
+//       description: course.description,
+//       category_id: parseInt(course.category_id),
+//       instructor_id: parseInt(instructorId),
+//       thumbnail_url,
+//     });
+//     const courseId = courseRes.data.id;
+
+//     // 🧱 Step 4: Create each module
+//     for (const mod of course.modules) {
+//       const moduleRes = await axios.post("/api/modules/create", {
+//         title: mod.title,
+//         description: mod.description,
+//         order: mod.order,
+//         course_id: courseId,
 //       });
+//       const moduleId = moduleRes.data.id;
 
-//       const courseId = courseRes.data.id;
+//       // 📚 Step 5: Create lessons within the module
+//       for (const lesson of mod.lessons) {
+//         let content_url = lesson.content_url;
 
-//       for (const mod of course.modules) {
-//         const moduleRes = await axios.post("/api/modules/create", {
-//           title: mod.title,
-//           description: mod.description,
-//           order: mod.order,
-//           course_id: courseId,
+//         // 🎥 Step 5a: Upload video if lesson type is 'video'
+//         if (lesson.content_type === 'video' && lesson.videoFile) {
+//           const lessonFormData = new FormData();
+//           lessonFormData.append("file", lesson.videoFile);
+//           const uploadRes = await axios.post("/api/upload", lessonFormData);
+//           content_url = uploadRes.data.attachment.secure_url;
+//         }
+
+//         // ✍️ Step 5b: Create lesson with correct content_url
+//         const lessonRes = await axios.post("/api/lessons/create", {
+//           title: lesson.title,
+//           content_type: lesson.content_type,
+//           content_url,
+//           duration: lesson.duration,
+//           order: lesson.order,
+//           module_id: moduleId,
 //         });
-//         const moduleId = moduleRes.data.id;
+//         const lessonId = lessonRes.data.id;
 
-//         for (const lesson of mod.lessons) {
-//           let content_url = lesson.content_url;
-
-//           if (lesson.content_type === 'video' && lesson.videoFile) {
-//             const videoForm = new FormData();
-//             videoForm.append("file", lesson.videoFile);
-//             const videoUpload = await axios.post("/api/upload", videoForm);
-//             content_url = videoUpload.data.attachment.secure_url;
-//           }
-
-//           if (lesson.content_type === 'assignment' && lesson.assignmentFile) {
-//             const fileForm = new FormData();
-//             fileForm.append("file", lesson.assignmentFile);
-//             const fileUpload = await axios.post("/api/upload", fileForm);
-//             content_url = fileUpload.data.attachment.secure_url;
-//           }
-//           console.log("Lesson payload:", {
-//   title: lesson.title,
-//   content_type: lesson.content_type,
-//   content_url,
-//   duration: lesson.duration,
-//   order: lesson.order,
-//   module_id: moduleId,
-// });
-
-
-//           const lessonRes = await axios.post("/api/lessons/create", {
-//             title: lesson.title,
-//             content_type: lesson.content_type,
-//             content_url,
-//             duration: lesson.duration,
-//             order: lesson.order,
-//             module_id: moduleId,
+//         // 🧠 Step 6: If it's a quiz lesson, create quiz + questions
+//         if (lesson.content_type === "quiz" && lesson.quiz) {
+//           const quizRes = await axios.post("/api/quizzes/create", {
+//             lesson_id: lessonId,
+//             max_score: lesson.quiz.max_score || 10,
 //           });
+//           const quizId = quizRes.data.id;
 
-//           const lessonId = lessonRes.data.id;
-
-//           if (lesson.content_type === 'quiz' && lesson.quiz) {
-//             const quizRes = await axios.post("/api/quizzes/create", {
-//               lesson_id: lessonId,
-//               max_score: lesson.quiz.max_score || 10,
-//             });
-//             const quizId = quizRes.data.id;
-
-//             for (const q of lesson.quiz.questions) {
-//               if (!q.options.includes(q.correct_answer)) {
-//                 throw new Error(`Correct answer must match one of the options.`);
-//               }
-
-//               await axios.post("/api/questions/create", {
-//                 quizz_id: quizId,
-//                 question_text: q.question_text,
-//                 options: q.options,
-//                 correct_answer: q.correct_answer,
-//               });
+//           // ✅ Step 6a: Validate + create each question
+//           for (const q of lesson.quiz.questions) {
+//             if (!q.options.includes(q.correct_answer)) {
+//               throw new Error(`Correct answer must match one of the options for question: "${q.question_text}"`);
 //             }
-//           }
 
-//           if (lesson.content_type === 'assignment') {
-//             await axios.post("/api/assignments/create", {
-//               lesson_id: lessonId,
-//               title: `Assignment for ${lesson.title}`,
-//               description: 'Please refer to the attached file.',
-//               file_url: content_url,
-//               deadline: null,
-//               max_score: 100
+//             await axios.post("/api/questions/create", {
+//               quizz_id: quizId,
+//               question_text: q.question_text,
+//               options: q.options,
+//               correct_answer: q.correct_answer,
 //             });
 //           }
 //         }
 //       }
-
-//       alert("🎉 Course created successfully!");
-//       setCourse({ title: '', description: '', category_id: '', thumbnail_url: '', modules: [] });
-//       setThumbnailFile(null);
-//     } catch (err) {
-//       console.error(err);
-//       alert("🚨 Error: " + (err.response?.data?.message || err.message));
-//     } finally {
-//       setIsSubmitting(false);
 //     }
-//   };
+
+//     // 🎉 Step 7: Notify success and reset form
+//     alert("🎉 Course and its full structure created successfully!");
+//     setCourse({
+//       title: '',
+//       description: '',
+//       category_id: '',
+//       thumbnail_url: '',
+//       modules: []
+//     });
+//     setThumbnailFile(null);
+//   } catch (err) {
+//     // ❌ Step 8: Handle errors cleanly
+//     console.error("❌ Error during course creation:", err.response?.data || err.message);
+//     alert("🚨 Something went wrong: " + (err.response?.data?.message || "Unexpected error."));
+//   } finally {
+//     // 🔄 Always reset the loading state
+//     setIsSubmitting(false);
+//   }
+// };
+
 
 //   return (
 //     <div className="container mt-5 mb-5">
-//       <h2>Create a New Course</h2>
+//       <h2 className="mb-4">📘 Create a New Course</h2>
 
-//       <input className="form-control mb-2" placeholder="Course Title" onChange={e => setCourse({ ...course, title: e.target.value })} />
-//       <textarea className="form-control mb-2" placeholder="Description" onChange={e => setCourse({ ...course, description: e.target.value })} />
+//       <div className="mb-3">
+//         <input className="form-control" placeholder="Course Title"
+//           onChange={e => setCourse({ ...course, title: e.target.value })} />
+//       </div>
 
-//       <select className="form-select mb-2" onChange={e => setCourse({ ...course, category_id: e.target.value })}>
-//         <option value="">-- Select Category --</option>
-//         {categories.map(cat => (
-//           <option key={cat.id} value={cat.id}>{cat.name}</option>
-//         ))}
-//       </select>
+//       <div className="mb-3">
+//         <textarea className="form-control" placeholder="Course Description"
+//           onChange={e => setCourse({ ...course, description: e.target.value })} />
+//       </div>
 
-//       <input type="file" className="form-control mb-3" onChange={e => setThumbnailFile(e.target.files[0])} />
+//       <div className="mb-3">
+//         <select className="form-select"
+//           onChange={e => setCourse({ ...course, category_id: e.target.value })}>
+//           <option value="">-- Select Category --</option>
+//           {categories.map(cat => (
+//             <option key={cat.id} value={cat.id}>{cat.name}</option>
+//           ))}
+//         </select>
+//       </div>
 
-//       <button className="btn btn-outline-primary mb-3" onClick={handleAddModule}>+ Add Module</button>
+//       <div className="mb-4">
+//         <input type="file" className="form-control mb-2"
+//           onChange={(e) => setThumbnailFile(e.target.files[0])} />
+//       </div>
+
+//       <hr />
+//       <button className="btn btn-outline-primary mb-4" onClick={handleAddModule}>+ Add Module</button>
 
 //       {course.modules.map((mod, mIdx) => (
 //         <div className="card mb-3" key={mIdx}>
 //           <div className="card-body">
-//             <input className="form-control mb-2" placeholder="Module Title" value={mod.title} onChange={e => handleModuleChange(mIdx, 'title', e.target.value)} />
-//             <textarea className="form-control mb-2" placeholder="Module Description" value={mod.description} onChange={e => handleModuleChange(mIdx, 'description', e.target.value)} />
+//             <h5 className="card-title">Module {mIdx + 1}</h5>
 
-//             <button className="btn btn-sm btn-secondary mb-3" onClick={() => handleAddLesson(mIdx)}>+ Add Lesson</button>
+//             <input className="form-control mb-2" placeholder="Module Title"
+//               value={mod.title} onChange={e => handleModuleChange(mIdx, 'title', e.target.value)} />
+
+//             <textarea className="form-control mb-2" placeholder="Module Description"
+//               value={mod.description} onChange={e => handleModuleChange(mIdx, 'description', e.target.value)} />
+
+//             <button className="btn btn-sm btn-secondary mb-2" onClick={() => handleAddLesson(mIdx)}>+ Add Lesson</button>
 
 //             {mod.lessons.map((lesson, lIdx) => (
-//               <div className="border p-3 mb-3" key={lIdx}>
-//                 <input className="form-control mb-2" placeholder="Lesson Title" value={lesson.title} onChange={e => handleLessonChange(mIdx, lIdx, 'title', e.target.value)} />
+//               <div className="border rounded p-3 mb-3" key={lIdx}>
+//                 <h6>Lesson {lIdx + 1}</h6>
 
-//                                 <select className="form-select mb-2" value={lesson.content_type} onChange={e => handleLessonChange(mIdx, lIdx, 'content_type', e.target.value)} disabled={!!lesson.quiz}>
+//                 <input className="form-control mb-2" placeholder="Lesson Title"
+//                   value={lesson.title}
+//                   onChange={e => handleLessonChange(mIdx, lIdx, 'title', e.target.value)} />
+
+//                                 <select className="form-select mb-2"
+//                   value={lesson.content_type}
+//                   onChange={e => handleLessonChange(mIdx, lIdx, 'content_type', e.target.value)}
+//                   disabled={!!lesson.quiz}>
 //                   <option value="video">Video</option>
-//                   <option value="assignment">Assignment</option>
 //                   <option value="quiz">Quiz</option>
 //                   <option value="text">Text</option>
 //                 </select>
@@ -251,15 +279,6 @@
 //                     accept="video/*"
 //                     className="form-control mb-2"
 //                     onChange={e => handleLessonChange(mIdx, lIdx, 'videoFile', e.target.files[0])}
-//                   />
-//                 )}
-
-//                 {lesson.content_type === 'assignment' && (
-//                   <input
-//                     type="file"
-//                     accept=".pdf,.doc,.docx"
-//                     className="form-control mb-2"
-//                     onChange={e => handleLessonChange(mIdx, lIdx, 'assignmentFile', e.target.files[0])}
 //                   />
 //                 )}
 
@@ -318,6 +337,7 @@
 //                             <option key={idx} value={opt}>{opt || `Option ${idx + 1}`}</option>
 //                           ))}
 //                         </select>
+
 //                       </div>
 //                     ))}
 //                     <button
@@ -354,22 +374,6 @@
 // };
 
 // export default CreateCourse;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -432,6 +436,7 @@ const CreateCourse = () => {
       content_type: 'video',
       content_url: '',
       videoFile: null,
+      markdownFile: null,
       duration: 0,
       order: modules[moduleIndex].lessons.length + 1,
       quiz: null
@@ -481,12 +486,13 @@ const CreateCourse = () => {
   };
 
   const handleSubmit = async () => {
-  if (isSubmitting) return; // 🔒 Prevent duplicate submissions
-  setIsSubmitting(true);     // 🕒 Show loading state
+  if (isSubmitting) return;
+  setIsSubmitting(true);
 
   try {
-    // 🖼️ Step 1: Upload thumbnail (if selected)
     let thumbnail_url = course.thumbnail_url;
+
+    // Upload course thumbnail if selected
     if (thumbnailFile) {
       const formData = new FormData();
       formData.append("file", thumbnailFile);
@@ -494,21 +500,19 @@ const CreateCourse = () => {
       thumbnail_url = uploadRes.data.attachment.secure_url;
     }
 
-    // ✅ Step 2: Validate required fields before submission
+    // Validate core course fields
     if (
       !course.title.trim() ||
       !course.description.trim() ||
       !course.category_id ||
-      isNaN(parseInt(course.category_id)) ||
-      !instructorId ||
-      isNaN(parseInt(instructorId)) ||
-      !thumbnail_url
+      !thumbnail_url ||
+      !instructorId
     ) {
-      alert("🚧 Please fill in all required fields before submitting.");
+      alert("🚧 Please fill in all required fields.");
       return;
     }
 
-    // 📘 Step 3: Create Course entry
+    // Create Course
     const courseRes = await axios.post("/api/courses/create", {
       title: course.title,
       description: course.description,
@@ -518,7 +522,7 @@ const CreateCourse = () => {
     });
     const courseId = courseRes.data.id;
 
-    // 🧱 Step 4: Create each module
+    // Create Modules + Lessons
     for (const mod of course.modules) {
       const moduleRes = await axios.post("/api/modules/create", {
         title: mod.title,
@@ -528,30 +532,32 @@ const CreateCourse = () => {
       });
       const moduleId = moduleRes.data.id;
 
-      // 📚 Step 5: Create lessons within the module
       for (const lesson of mod.lessons) {
-        let content_url = lesson.content_url;
-
-        // 🎥 Step 5a: Upload video if lesson type is 'video'
-        if (lesson.content_type === 'video' && lesson.videoFile) {
-          const lessonFormData = new FormData();
-          lessonFormData.append("file", lesson.videoFile);
-          const uploadRes = await axios.post("/api/upload", lessonFormData);
-          content_url = uploadRes.data.attachment.secure_url;
-        }
-
-        // ✍️ Step 5b: Create lesson with correct content_url
+        // Create Lesson first (no file yet)
         const lessonRes = await axios.post("/api/lessons/create", {
           title: lesson.title,
           content_type: lesson.content_type,
-          content_url,
+          content_url: "", // can be empty; we're uploading file next
           duration: lesson.duration,
           order: lesson.order,
           module_id: moduleId,
         });
         const lessonId = lessonRes.data.id;
 
-        // 🧠 Step 6: If it's a quiz lesson, create quiz + questions
+        // Upload file with lesson_id
+        if (lesson.content_type === 'video' && lesson.videoFile) {
+          const videoData = new FormData();
+          videoData.append("file", lesson.videoFile);
+          videoData.append("lesson_id", lessonId);
+          await axios.post("/api/upload", videoData);
+        } else if (lesson.content_type === 'text' && (lesson.markdownFile || lesson.wordFile)) {
+          const textData = new FormData();
+          textData.append("file", lesson.markdownFile || lesson.wordFile);
+          textData.append("lesson_id", lessonId);
+          await axios.post("/api/upload", textData);
+        }
+
+        // Handle quiz
         if (lesson.content_type === "quiz" && lesson.quiz) {
           const quizRes = await axios.post("/api/quizzes/create", {
             lesson_id: lessonId,
@@ -559,10 +565,9 @@ const CreateCourse = () => {
           });
           const quizId = quizRes.data.id;
 
-          // ✅ Step 6a: Validate + create each question
           for (const q of lesson.quiz.questions) {
             if (!q.options.includes(q.correct_answer)) {
-              throw new Error(`Correct answer must match one of the options for question: "${q.question_text}"`);
+              throw new Error(`Correct answer must match one of the options.`);
             }
 
             await axios.post("/api/questions/create", {
@@ -576,28 +581,19 @@ const CreateCourse = () => {
       }
     }
 
-    // 🎉 Step 7: Notify success and reset form
-    alert("🎉 Course and its full structure created successfully!");
-    setCourse({
-      title: '',
-      description: '',
-      category_id: '',
-      thumbnail_url: '',
-      modules: []
-    });
+    alert("🎉 Course and all contents created successfully!");
+    setCourse({ title: '', description: '', category_id: '', thumbnail_url: '', modules: [] });
     setThumbnailFile(null);
   } catch (err) {
-    // ❌ Step 8: Handle errors cleanly
-    console.error("❌ Error during course creation:", err.response?.data || err.message);
-    alert("🚨 Something went wrong: " + (err.response?.data?.message || "Unexpected error."));
+    console.error("Error during course creation:", err);
+    alert("🚨 Something went wrong.");
   } finally {
-    // 🔄 Always reset the loading state
     setIsSubmitting(false);
   }
 };
 
 
-  return (
+    return (
     <div className="container mt-5 mb-5">
       <h2 className="mb-4">📘 Create a New Course</h2>
 
@@ -650,7 +646,7 @@ const CreateCourse = () => {
                   value={lesson.title}
                   onChange={e => handleLessonChange(mIdx, lIdx, 'title', e.target.value)} />
 
-                                <select className="form-select mb-2"
+                <select className="form-select mb-2"
                   value={lesson.content_type}
                   onChange={e => handleLessonChange(mIdx, lIdx, 'content_type', e.target.value)}
                   disabled={!!lesson.quiz}>
@@ -659,6 +655,7 @@ const CreateCourse = () => {
                   <option value="text">Text</option>
                 </select>
 
+                {/* Upload for video */}
                 {lesson.content_type === 'video' && (
                   <input
                     type="file"
@@ -668,12 +665,28 @@ const CreateCourse = () => {
                   />
                 )}
 
-                <input
-                  className="form-control mb-2"
-                  placeholder="Content URL or Text"
-                  value={lesson.content_url}
-                  onChange={e => handleLessonChange(mIdx, lIdx, 'content_url', e.target.value)}
-                />
+                {/* Upload for markdown */}
+                {lesson.content_type === 'text' && (
+                  <div className="mb-2">
+                    <label className="form-label">Upload Markdown (.md)</label>
+                    <input
+                      type="file"
+                      accept=".md"
+                      className="form-control"
+                      onChange={(e) => handleLessonChange(mIdx, lIdx, 'markdownFile', e.target.files[0])}
+                    />
+                  </div>
+                )}
+
+                {/* Show content_url input only if lesson has no file */}
+                {!(lesson.content_type === 'text' && lesson.markdownFile) && (
+                  <input
+                    className="form-control mb-2"
+                    placeholder="Content URL (e.g. for PDFs)"
+                    value={lesson.content_url}
+                    onChange={e => handleLessonChange(mIdx, lIdx, 'content_url', e.target.value)}
+                  />
+                )}
 
                 <input
                   type="number"
@@ -687,6 +700,7 @@ const CreateCourse = () => {
                   <button className="btn btn-sm btn-warning" onClick={() => handleAddQuiz(mIdx, lIdx)}>+ Add Quiz</button>
                 )}
 
+                {/* Quiz editor */}
                 {lesson.quiz && (
                   <div className="mt-3 bg-light p-3 rounded">
                     <input
@@ -723,7 +737,6 @@ const CreateCourse = () => {
                             <option key={idx} value={opt}>{opt || `Option ${idx + 1}`}</option>
                           ))}
                         </select>
-
                       </div>
                     ))}
                     <button
@@ -760,3 +773,4 @@ const CreateCourse = () => {
 };
 
 export default CreateCourse;
+
