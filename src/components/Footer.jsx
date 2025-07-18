@@ -3,7 +3,22 @@ import CoursifyLogo from '../assets/Coursify-logo.png';
 
 const Footer = () => {
   return (
-    <Box sx={{ backgroundColor: '#111827', color: '#fff', mt: 6, pt: 4, pb: 2 }}>
+ <Box
+  sx={{
+    backgroundColor: '#111827',
+    color: '#fff',
+    mt: 6,
+    pt: 4,
+    pb: 2,
+    px: { xs: 2, md: 8 },
+    position: 'relative',
+    zIndex: theme => theme.zIndex.drawer + 2,
+    boxShadow: '0px -2px 8px rgba(0,0,0,0.3)', // ➕ subtle elevation like navbar
+    borderTop: '1px solid #1f2937'            // ➕ adds visual polish
+  }}
+>
+
+
       <Grid
         container
         spacing={3}
