@@ -33,24 +33,27 @@ const StudentLayout = () => {
   return (
     <Box sx={{ display: 'flex' }}>
       {/* Sidebar Drawer, offset below Navbar */}
-      <Drawer
-        variant="persistent"
-        anchor="left"
-        open={open}
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          position: 'fixed',
-          top: '64px',
-          height: 'calc(100% - 64px)',
-          '& .MuiDrawer-paper': {
-            width: drawerWidth,
-            top: '64px',
-            height: 'calc(100% - 64px)',
-            boxSizing: 'border-box'
-          }
-        }}
-      >
+     <Drawer
+  variant="persistent"
+  anchor="left"
+  open={open}
+  sx={{
+    width: drawerWidth,
+    flexShrink: 0,
+    position: 'fixed',
+    top: '64px',
+    height: 'calc(100% - 64px)',
+    zIndex: theme => theme.zIndex.appBar - 2, // 👈 Sidebar goes below navbar & footer
+    '& .MuiDrawer-paper': {
+      width: drawerWidth,
+      top: '64px',
+      height: 'calc(100% - 64px)',
+      boxSizing: 'border-box',
+      zIndex: theme => theme.zIndex.appBar - 2 // 👈 Also apply here
+    }
+  }}
+>
+
         <Toolbar>
           <IconButton onClick={toggleDrawer}>
             {open ? <CloseIcon /> : <MenuIcon />}
