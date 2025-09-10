@@ -32,19 +32,6 @@ export const AuthProvider = ({ children }) => {
   }
 };
 
-
-
-//   const fetchUser = async () => {
-//     try {
-//       const currentUser = await authService.getMe();
-//       setUser(currentUser);
-//     } catch (err) {
-//       setUser(null);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
   useEffect(() => {
     fetchUser();
   }, [location.pathname]);
